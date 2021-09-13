@@ -1,6 +1,3 @@
-const express = require("express");
-const helmet = require("helmet");
-const cors = require("cors");
 
 /**
   Do what needs to be done to support sessions with the `express-session` package!
@@ -11,19 +8,62 @@ const cors = require("cors");
   Users that do authenticate should have a session persisted on the server,
   and a cookie set on the client. The name of the cookie should be "chocolatechip".
 
-  The session can be persisted in memory (would not be adecuate for production)
+  The session can be persisted in memory (would not be adequate for production)
   or you can use a session store like `connect-session-knex`.
  */
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const usersRouter = require("./users/users-router");
+const authRouter = require('./auth/auth-router');
+const session = require("express-session");
+const Store = require("connect-session-knex")(session);
+
 
 const server = express();
-
+server.use(session({
+  //cookie name
+  name: "chocolatechip",
+  //name of hash system
+  secret: "shh",
+  //
+  saveUninitialized: false.valueOf(),
+  //session persistence
+  resave: false,
+  //Create the store
+  store: new Store({
+    knex,
+    createTable: true,
+    clearInterval: 1000 * 60 * 10,
+    //Table name for storing sessions
+    tableName: "sessions",
+    sidfieldname: "sid"
+  }),
+  //Configure cookie
+  cookie: {
+    //set expiration (10 minutes)
+    maxAge: 1000 * 60 * 10,
+    //cookie exchange will not happen unless httpS(true)
+    //set to false because server runs on http
+    secure: false,
+    //Determines whether javascript running in browser can read the cookie(true means it cannot)
+    httpOnly: true,
+    //how to deal with 3rd arty cookies
+    //sameSite:""
+  }
+}))
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
+server.use("/api/users", usersRouter);
+server.use("/api/auth", authRouter);
+
 server.get("/", (req, res) => {
   res.json({ api: "up" });
 });
+
+
 
 server.use((err, req, res, next) => { // eslint-disable-line
   res.status(err.status || 500).json({
