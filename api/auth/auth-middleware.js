@@ -23,11 +23,11 @@ function restricted(req, res, next) {
 */
 async function checkUsernameFree(req, res, next) {
     try{
-        const users = await User.findBy({username: req.bdy.username})
+        const users = await User.findBy({username: req.body.username})
         //If the user array is empty (has no length), the name is available, move on
         if(!users.length) {next()}
         //If the name is taken...
-        else{next({message : "username taken", status: 422})}
+        else{next({status:422, message: "Username taken"})}
     }
     catch(err){next(err)}
 }
@@ -42,17 +42,18 @@ async function checkUsernameFree(req, res, next) {
 */
 async function checkUsernameExists(req, res, next) {
     try{
-        const users = await User.findBy({username: req.bdy.username})
+        const users = await User.findBy({username: req.body.username})
         //If the user exists (the array has length), proceed
         if(users.length) {
             req.user = users[0]
             next()
         }
         //Otherwise...
-        else{next({message : "username taken", status: 401})}
+        else{next({status:401, message: "Invalid credentials"})}
     }
     catch(err){next(err)}
 }
+
 
 /*
   If password is missing from req.body, or if it's 3 chars or shorter
@@ -71,3 +72,4 @@ function checkPasswordLength(req, res, next) {
 
 // Don't forget to add these to the `exports` object so they can be required in other modules
 module.exports = {restricted, checkUsernameFree, checkUsernameExists, checkPasswordLength }
+
